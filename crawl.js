@@ -3,9 +3,25 @@ const JSDOM = require('jsdom');
 async function crawlPage(currentURL) {
   console.log(`actively crawling ${currentURL}`);
 
-  const res = await fetch(currentURL);
+  try {
+    const res = await fetch(currentURL);
 
-  console.log(await res.text());
+    if (res.status > 399) {
+      console.log(`error in url ${currentURL} with status ${res.status}`);
+      return;
+    }
+
+    const contentType = res.headers.get('content-type');
+    if (!contentType.includes('text/html')) {
+      console.log(
+        `error in content type ${contentType} with status code ${res.status}`
+      );
+      return;
+    }
+    console.log(await res.text());
+  } catch (e) {
+    console.log(`error on ${e.message} on the current url ${currentURL}`);
+  }
 }
 
 function getURLsFromHTML(htmlbody, baseURL) {

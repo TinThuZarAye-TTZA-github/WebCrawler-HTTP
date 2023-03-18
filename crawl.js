@@ -1,14 +1,32 @@
-const JSDOM = require('jsdom');
+const jsdom = require('jsdom');
+const { JSDOM } = jsdom;
 
-async function crawlPage(currentURL) {
+async function crawlPage(baseURL, currentURL, pages) {
+  const baseURLObj = new URL(baseURL);
+  const currentURLObj = new URL(currentURL);
+
+  if (baseURLObj.hostname !== currentURLObj.hostname) {
+    return pages;
+  }
+
+  const normalizedCurrentURL = normalizeURL(currentURL);
+  if (pages[normalizedCurrentURL] > 0) {
+    pages[normalizedCurrentURL]++;
+    return pages;
+  }
+
+  pages[normalizedCurrentURL] = 1;
+
   console.log(`actively crawling ${currentURL}`);
+
+  // const htmlBody = '';
 
   try {
     const res = await fetch(currentURL);
 
     if (res.status > 399) {
       console.log(`error in url ${currentURL} with status ${res.status}`);
-      return;
+      return pages;
     }
 
     const contentType = res.headers.get('content-type');
@@ -16,17 +34,25 @@ async function crawlPage(currentURL) {
       console.log(
         `error in content type ${contentType} with status code ${res.status}`
       );
-      return;
+      return pages;
     }
-    console.log(await res.text());
+    const htmlBody = await res.text();
+    const nextURLs = getURLsFromHTML(htmlBody, baseURL);
+    for (const nextURL of nextURLs) {
+      pages = await crawlPage(baseURL, nextURL, pages);
+    }
+
+    // console.log(await res.text());
   } catch (e) {
     console.log(`error on ${e.message} on the current url ${currentURL}`);
   }
+
+  return pages;
 }
 
-function getURLsFromHTML(htmlbody, baseURL) {
+function getURLsFromHTML(htmlBody, baseURL) {
   const url = [];
-  const dom = new JSDOM(htmlbody);
+  const dom = new JSDOM(htmlBody);
   const linkElements = dom.window.document.querySelectorAll('a');
   console.log(linkElements);
   for (const linkElement of linkElements) {

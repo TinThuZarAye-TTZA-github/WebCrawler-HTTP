@@ -1,6 +1,7 @@
 // import { crawlPage } from './crawl';
 // import crawlPage from './crawl.js';
-const crawlPage = require('./crawl.js');
+const { crawlPage } = require('./crawl');
+const { printReport } = require('./report');
 
 async function main() {
   if (process.argv.length < 3) {
@@ -15,11 +16,12 @@ async function main() {
   const baseURL = process.argv[2];
 
   console.log(`start crawling ${baseURL}`);
-  const pages = await crawlPage.crawlPage(baseURL, baseURL, {});
+  const pages = await crawlPage(baseURL, baseURL, {});
 
-  for (const page of Object.entries(pages)) {
-    console.log(page);
-  }
+  printReport(pages);
+  //   for (const page of Object.entries(pages)) {
+  //     console.log(page);
+  //   }
 }
 
 main();
